@@ -6,33 +6,42 @@ import './index.css';
 function Square(props){
     return <button className="square" onClick={props.onClick}>{props.value}</button> }
 
+class Row extends React.Component{
+    renderSquare(i) {
+        return <Square
+            value={this.props.squares[i]}
+            onClick={() => this.props.onClick(i)}
+        />;
+    }
+    doRow(){
+        const row = [];
+        for(let i =this.props.startIndex;i<this.props.startIndex+this.props.rowLength;i++){
+            row.push(this.renderSquare(i));
+        }
+        return row;
+    }
+    render(){
+        return <div className="board-row">{this.doRow()}</div>;
+    }
+}
+
 class Board extends React.Component {
 
-  renderSquare(i) {
-    return <Square
-        value={this.props.squares[i]}
-        onClick={() => this.props.onClick(i)}
-    />;
-  }
+    createBoard() {
+       const rowLength = this.props.boardSize;
+        const board = [];
+
+        for (let i = 0; i < this.props.squares.length; i= i+rowLength) {
+            board.push(<Row startIndex = {i} rowLength = {rowLength} squares = {this.props.squares} onClick={this.props.onClick} />);
+        }
+        return board;
+    }
 
   render() {
+     // debugger
     return (
       <div>
-        <div className="board-row">
-          {this.renderSquare(0)}
-          {this.renderSquare(1)}
-          {this.renderSquare(2)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(3)}
-          {this.renderSquare(4)}
-          {this.renderSquare(5)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(6)}
-          {this.renderSquare(7)}
-          {this.renderSquare(8)}
-        </div>
+        {this.createBoard()}
       </div>
     );
   }
@@ -43,11 +52,12 @@ class Board extends React.Component {
 class Game extends React.Component {
    constructor(props) {
        super(props);
+       const boardSize =3; //used for calculating row/col -   can only be 3 currently due to winning alg
        this.state={
-           history:[{squares: Array(9).fill(null), moveText:"No Move"}],
+           boardSize: boardSize,
+           history:[{squares: Array(boardSize*boardSize).fill(null), moveText:"No Move"}],
            stepNumber: 0,
            xIsNext: true,
-           boardSize: 3, //used for calculating row/col -   can only be 3 currently
        };
 
    }
@@ -108,6 +118,7 @@ class Game extends React.Component {
       <div className="game">
         <div className="game-board">
           <Board
+              boardSize = {this.state.boardSize}
               squares={current.squares}
               onClick={(i) => this.handleClick(i)}
           />
