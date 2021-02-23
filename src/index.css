@@ -3,9 +3,7 @@ body {
   margin: 20px;
 }
 
-ol, ul {
-  padding-left: 30px;
-}
+
 
 .board-row:after {
   clear: both;
@@ -47,5 +45,27 @@ ol, ul {
 
 .game-info {
   margin-left: 20px;
+}
+
+.history{
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history li{
+  border: 1px solid #ddd;
+  margin-top: -1px; /* Prevent double borders */
+  background-color: #f6f6f6;
+  padding: 12px;
+  text-decoration: none;
+
+  display: block;
+  position: relative;
+}
+
+.history li:hover{
+  background-color: #eee;
+  cursor: pointer;
 }
 
