@@ -44,9 +44,10 @@ class Game extends React.Component {
    constructor(props) {
        super(props);
        this.state={
-           history:[{squares: Array(9).fill(null)}],
+           history:[{squares: Array(9).fill(null), moveText:"No Move"}],
            stepNumber: 0,
            xIsNext: true,
+           boardSize: 3, //used for calculating row/col - can only be 3 currently
        };
 
    }
@@ -54,12 +55,20 @@ class Game extends React.Component {
     handleClick(i) {
         const history = this.state.history.slice(0,this.state.stepNumber+1);
 
+        //do history
+        //update board
         const current = history[this.state.stepNumber];
         const squares = current.squares.slice();
         if (calculateWinner(squares) || squares[i]) {      return;    }
         squares[i] = this.state.xIsNext ? 'X' : 'O';
+
+        //convert move to text form
+        const row = Math.floor(i/this.state.boardSize);
+        const col = (i % this.state.boardSize);
+        const moveText = `(${row+1},${col+1})`;
+
         this.setState({
-            history: history.concat([{squares: squares,}]),
+            history: history.concat([{squares: squares, moveText:moveText}]),
             stepNumber:history.length,
             xIsNext: !this.state.xIsNext,
         });
@@ -77,9 +86,8 @@ class Game extends React.Component {
 
       const current = history[this.state.stepNumber];
       const winner = calculateWinner(current.squares);
-
       const moves = history.map((step,move) => {
-          const desc = move ? 'go To move #' + move : 'Go to game start';
+          const desc = move ? 'go To move ' + step.moveText : 'Go to game start';
           return (<li key={move}><button
               onClick={()=>this.jumpTo(move)}>{desc}
           </button></li>)
