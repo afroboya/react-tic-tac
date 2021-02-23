@@ -52,36 +52,51 @@ class Board extends React.Component {
 class Game extends React.Component {
    constructor(props) {
        super(props);
-       const boardSize =3; //used for calculating row/col -   can only be 3 currently due to winning alg
+       const boardSize =4; //used for calculating row/col -   can only be 3 currently due to winning alg
        this.state={
            boardSize: boardSize,
-           history:[{squares: Array(boardSize*boardSize).fill(null), moveText:"No Move"}],
+           history:[{squares: Array(boardSize*boardSize).fill(null), row:null, col:null,moveText:"No Move",winner:null}],
            stepNumber: 0,
            xIsNext: true,
+
        };
 
    }
 
     handleClick(i) {
+
         const history = this.state.history.slice(0,this.state.stepNumber+1);
 
         //do history
         //update board
         const current = history[this.state.stepNumber];
         const squares = current.squares.slice();
-        if (calculateWinner(squares) || squares[i]) {      return;    }
+        //if square filled or winner exists in history
+        if (squares[i]||current.winner) {      return;    }
+
+
+        //update squares
         squares[i] = this.state.xIsNext ? 'X' : 'O';
 
-        //convert move to text form
         const row = Math.floor(i/this.state.boardSize);
         const col = (i % this.state.boardSize);
-        const moveText = `(${row+1},${col+1})`;
+        //check for win
+        let winner = calculateWinner(squares,row,col,i,this.state.boardSize);
+        //convert move to text form
+
+        if(this.state.history[0].squares.length === this.state.history.length){
+            //tie game
+           if(winner === null){
+               winner = "Tie";
+           }
+        }
 
         this.setState({
-            history: history.concat([{squares: squares, moveText:moveText}]),
+            history: history.concat([{squares: squares, row:row,col:col,winner:winner}]),
             stepNumber:history.length,
             xIsNext: !this.state.xIsNext,
         });
+
     }
 
      jumpTo(step){
@@ -95,9 +110,12 @@ class Game extends React.Component {
       const history = this.state.history;
 
       const current = history[this.state.stepNumber];
-      const winner = calculateWinner(current.squares);
+
+
+
       const moves = history.map((step,move) => {
-          const tempDesc = move ? 'go To move ' + step.moveText : 'Go to game start';
+          const moveText = `(${step.row+1},${step.col+1})`;
+          const tempDesc = move ? 'go To move ' + moveText : 'Go to game start';
           const desc = this.state.stepNumber === move ? "➤ "+tempDesc : tempDesc;
           return (<li key={move} onClick={()=>this.jumpTo(move)}>
               {desc}
@@ -108,8 +126,8 @@ class Game extends React.Component {
 
 
       let status;
-      if (winner) {
-          status = 'Winner: ' + winner;
+      if (current.winner) {
+          status = 'Winner: ' + current.winner;
       } else {
           status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
       }
@@ -132,23 +150,77 @@ class Game extends React.Component {
   }
 }
 
-function calculateWinner(squares) {
-    const lines = [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6],
-    ];
-    for (let i = 0; i < lines.length; i++) {
-        const [a, b, c] = lines[i];
-        if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-            return squares[a];
+function convertToIndex(row,col,size){return row*size+col; }
+
+function checkAcross(squares,row,col, boardSize){
+    const index = convertToIndex(row,col,boardSize);
+    const startIndex = index - col;
+    const desiredIcon = squares[index];
+
+    for(let i=startIndex;i<startIndex+boardSize;i++){
+        if(squares[i] !== desiredIcon ){
+            return null;
         }
     }
+
+    return desiredIcon;
+}
+function checkVertical(squares,row,col,boardSize){
+    const index = convertToIndex(row,col,boardSize);
+    const desiredIcon = squares[index];
+
+    for(let i=0;i<boardSize;i++){
+
+        if(squares[convertToIndex(i,col,boardSize)] !== desiredIcon){
+            return null
+        }
+    }
+
+    return desiredIcon;
+}
+function downLeft(squares,boardSize,desiredIcon){
+
+    const step = boardSize-1;
+    for(let i=step;i<=(boardSize*step);i=i+step){
+        if(squares[i]!== desiredIcon){
+            return null;
+        }
+    }
+    return desiredIcon;
+}
+function downRight(squares,boardSize,desiredIcon){
+    for(let i=0;i<squares.length;i=i+(boardSize+1)){
+        if(squares[i]!== desiredIcon){
+
+            return null;
+        }
+    }
+    return squares[boardSize];
+}
+function checkDiag(squares,row,col,boardSize){
+    const index = convertToIndex(row,col,boardSize);
+
+    const desiredIcon = squares[index];
+
+    const doDownleft = (index%(boardSize-1) === 0);
+    const doDownRight = (index%(boardSize+1) === 0);
+
+
+    if(doDownleft && downLeft(squares,boardSize,desiredIcon)!==null){
+        return desiredIcon;
+    }
+    if(doDownRight && downRight(squares,boardSize,desiredIcon)!==null){
+        return desiredIcon;
+    }
+    return null;
+}
+function calculateWinner(squares,row,col,index,boardSize) {
+    const across = checkAcross(squares,row,col,boardSize);
+    const vertical = checkVertical(squares,row,col,boardSize);
+    const diag = checkDiag(squares,row,col,boardSize);
+    if(across){console.log("across: "+across);return across}
+    if(vertical){console.log("vertical: "+vertical);return vertical}
+    if(diag){console.log("diag: "+diag);return diag}
     return null;
 }
 
