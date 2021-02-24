@@ -4,13 +4,14 @@ import './index.css';
 
 
 function Square(props){
-    return <button className="square" onClick={props.onClick}>{props.value}</button> }
+    return <button className={`square ${props.highlight ? "active":""}`} onClick={props.onClick}>{props.value}</button> }
 
 class Row extends React.Component{
     renderSquare(i) {
         return <Square
             value={this.props.squares[i]}
             onClick={() => this.props.onClick(i)}
+            highlight={this.props.highlight.includes(i)}
         />;
     }
     doRow(){
@@ -32,7 +33,7 @@ class Board extends React.Component {
         const board = [];
 
         for (let i = 0; i < this.props.squares.length; i= i+rowLength) {
-            board.push(<Row startIndex = {i} rowLength = {rowLength} squares = {this.props.squares} onClick={this.props.onClick} />);
+            board.push(<Row startIndex = {i} rowLength = {rowLength} squares = {this.props.squares} onClick={this.props.onClick} highlight={this.props.highlight}/>);
         }
         return board;
     }
@@ -52,13 +53,13 @@ class Board extends React.Component {
 class Game extends React.Component {
    constructor(props) {
        super(props);
-       const boardSize =4; //used for calculating row/col -   can only be 3 currently due to winning alg
+       const boardSize =3;
        this.state={
            boardSize: boardSize,
-           history:[{squares: Array(boardSize*boardSize).fill(null), row:null, col:null,moveText:"No Move",winner:null}],
+           history:[{squares: Array(boardSize*boardSize).fill(null), row:null, col:null,moveText:"No Move",winner:[null]}],
            stepNumber: 0,
            xIsNext: true,
-
+           highlight:Array(boardSize*boardSize).fill(null),
        };
 
    }
@@ -72,7 +73,7 @@ class Game extends React.Component {
         const current = history[this.state.stepNumber];
         const squares = current.squares.slice();
         //if square filled or winner exists in history
-        if (squares[i]||current.winner) {      return;    }
+        if (squares[i]||current.winner[0]) {      return;    }
 
 
         //update squares
@@ -84,11 +85,15 @@ class Game extends React.Component {
         let winner = calculateWinner(squares,row,col,i,this.state.boardSize);
         //convert move to text form
 
+
         if(this.state.history[0].squares.length === this.state.history.length){
             //tie game
            if(winner === null){
-               winner = "Tie";
+               winner = [-1];
            }
+        }
+        if(!winner){
+            winner = Array(this.state.boardSize).fill(null);
         }
 
         this.setState({
@@ -126,8 +131,11 @@ class Game extends React.Component {
 
 
       let status;
-      if (current.winner) {
-          status = 'Winner: ' + current.winner;
+      if(current.winner[0] === -1){
+          //tie
+          status = "tie";
+      }else if (current.winner[0]) {
+          status = 'Winner: ' + current.squares[current.winner[0]];
       } else {
           status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
       }
@@ -139,6 +147,7 @@ class Game extends React.Component {
               boardSize = {this.state.boardSize}
               squares={current.squares}
               onClick={(i) => this.handleClick(i)}
+              highlight={current.winner}
           />
         </div>
         <div className="game-info">
@@ -156,46 +165,50 @@ function checkAcross(squares,row,col, boardSize){
     const index = convertToIndex(row,col,boardSize);
     const startIndex = index - col;
     const desiredIcon = squares[index];
-
+    const arrIndex = [];
     for(let i=startIndex;i<startIndex+boardSize;i++){
         if(squares[i] !== desiredIcon ){
             return null;
         }
+        arrIndex.push(i);
     }
 
-    return desiredIcon;
+    return arrIndex;
 }
 function checkVertical(squares,row,col,boardSize){
     const index = convertToIndex(row,col,boardSize);
     const desiredIcon = squares[index];
-
+    const arrIndex = [];
     for(let i=0;i<boardSize;i++){
-
-        if(squares[convertToIndex(i,col,boardSize)] !== desiredIcon){
+        const curIndex = convertToIndex(i,col,boardSize);
+        if(squares[curIndex] !== desiredIcon){
             return null
         }
+        arrIndex.push(curIndex);
     }
 
-    return desiredIcon;
+    return arrIndex;
 }
 function downLeft(squares,boardSize,desiredIcon){
-
+    const arrIndex = [];
     const step = boardSize-1;
     for(let i=step;i<=(boardSize*step);i=i+step){
         if(squares[i]!== desiredIcon){
             return null;
         }
+        arrIndex.push(i);
     }
-    return desiredIcon;
+    return arrIndex;
 }
 function downRight(squares,boardSize,desiredIcon){
+    const arrIndex = [];
     for(let i=0;i<squares.length;i=i+(boardSize+1)){
         if(squares[i]!== desiredIcon){
-
             return null;
         }
+        arrIndex.push(i);
     }
-    return squares[boardSize];
+    return arrIndex;
 }
 function checkDiag(squares,row,col,boardSize){
     const index = convertToIndex(row,col,boardSize);
@@ -206,11 +219,17 @@ function checkDiag(squares,row,col,boardSize){
     const doDownRight = (index%(boardSize+1) === 0);
 
 
-    if(doDownleft && downLeft(squares,boardSize,desiredIcon)!==null){
-        return desiredIcon;
+    if(doDownleft){
+        const result = downLeft(squares,boardSize,desiredIcon);
+        if(result!==null) {
+            return result;
+        }
     }
-    if(doDownRight && downRight(squares,boardSize,desiredIcon)!==null){
-        return desiredIcon;
+    if(doDownRight){
+        const result = downRight(squares,boardSize,desiredIcon)
+        if(result!==null) {
+            return result;
+        }
     }
     return null;
 }
