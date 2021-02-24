@@ -73,7 +73,8 @@ class Game extends React.Component {
         const current = history[this.state.stepNumber];
         const squares = current.squares.slice();
         //if square filled or winner exists in history
-        if (squares[i]||current.winner[0]) {      return;    }
+
+        if (squares[i] || current.winner[0] !==  null) {     return;    }
 
 
         //update squares
@@ -134,7 +135,7 @@ class Game extends React.Component {
       if(current.winner[0] === -1){
           //tie
           status = "tie";
-      }else if (current.winner[0]) {
+      }else if (current.winner[0] !== null ) {
           status = 'Winner: ' + current.squares[current.winner[0]];
       } else {
           status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
